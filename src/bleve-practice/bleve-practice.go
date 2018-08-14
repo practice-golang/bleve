@@ -46,10 +46,15 @@ func main() {
 	// 검색
 	// - 불완전한 단어는 검색되지 않으므로 정규표현식을 써야한다.
 	// - 글자수 제한: 영어 4, 한글 2
-	// que := bleve.NewMatchQuery("text")
-	// que := bleve.NewRegexpQuery("(.*)text(.*)")
-	que := bleve.NewRegexpQuery("(.*)하하(.*)")
+	que1 := bleve.NewMatchQuery("simply")
+	que2 := bleve.NewMatchQuery("text")
+	que3 := bleve.NewRegexpQuery("(.*)하하(.*)")
+	// que := bleve.NewRegexpQuery("(.*)하하(.*)")
 	// que := bleve.NewRegexpQuery("(.*)")
+	que := bleve.NewConjunctionQuery()
+	que.AddQuery(que1)
+	que.AddQuery(que2)
+	que.AddQuery(que3)
 
 	search := bleve.NewSearchRequest(que)
 	searchResults, err := index.Search(search)
