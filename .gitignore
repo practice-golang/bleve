@@ -1,0 +1,8 @@
+.DS_Store
+pkg
+bin
+bleve-practice.exe
+storage
+vendor
+Gopkg.lock
+Gopkg.toml
