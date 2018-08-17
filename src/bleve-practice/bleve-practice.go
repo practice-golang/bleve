@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"time"
+
+	// "time"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
+	// "github.com/blevesearch/bleve/document"
 )
 
 // Book - 도서 정보
@@ -34,27 +38,43 @@ func main() {
 		panic(err)
 	}
 
-	data := struct {
-		Name string
-	}{
-		Name: "Lorem 크하하 Ipsum is simply dummy text of the printing and typesetting industry",
+	data := Book{
+		Title:  "Lorem 크하하 Ipsum is simply dummy text of the printing and typesetting industry",
+		Author: "WhoHaHaHeeHee",
 	}
 
+	// 데이터 추가
 	index.Index("First", data)
 	index.Index("Second", data)
 
-	// 검색
+	dataMod := Book{
+		Title:  "Lorem 크하하 Ipsum is simply dummy text of the printing and typesetting industry BaBaBa",
+		Author: "WhoHa",
+	}
+
+	// 데이터 수정
+	index.Index("First", dataMod)
+
+	// 검색 - cRud
 	// - 불완전한 단어는 검색되지 않으므로 정규표현식을 써야한다.
 	// - 글자수 제한: 영어 4, 한글 2
+
+	// Title, Author 전체 검색
 	que1 := bleve.NewMatchQuery("simply")
 	que2 := bleve.NewMatchQuery("text")
 	que3 := bleve.NewRegexpQuery("(.*)하하(.*)")
-	// que := bleve.NewRegexpQuery("(.*)하하(.*)")
-	// que := bleve.NewRegexpQuery("(.*)")
+
+	// Author 검색
+	que4 := bleve.NewMatchQuery("WhoHa")
+	// que4 := bleve.NewRegexpQuery("(.*)하하(.*)") // 정규표현식 안 된다...
+	que4.SetField("Author")
+
+	// 개별 생성한 검색쿼리 합치기
 	que := bleve.NewConjunctionQuery()
 	que.AddQuery(que1)
 	que.AddQuery(que2)
 	que.AddQuery(que3)
+	que.AddQuery(que4)
 
 	search := bleve.NewSearchRequest(que)
 	searchResults, err := index.Search(search)
@@ -62,16 +82,17 @@ func main() {
 		panic(err)
 	}
 
+	// 이건 그냥 결과가 없을 때 표시
 	if searchResults.Total == 0 {
 		fmt.Println(searchResults)
 	}
 
+	// 결과 표시
 	for _, hit := range searchResults.Hits {
 		doc, err := index.Document(hit.ID)
 		if err != nil {
 			panic(err)
 		}
-		// fmt.Println(doc.GoString())
 
 		data := struct {
 			ID     string                 `json:"id"`
@@ -117,6 +138,6 @@ func main() {
 		}
 
 		// fmt.Println(data)
-		fmt.Println(hit.ID, " : ", data.Fields["Name"])
+		fmt.Println(hit.ID, " : ", data.Fields["Title"], " / ", data.Fields["Author"], reflect.TypeOf(data.Fields["Author"]))
 	}
 }
