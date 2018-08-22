@@ -33,11 +33,13 @@ func bleveInit(indexPath string) (bleve.Index, error) {
 }
 
 func main() {
+	// DB 준비
 	index, err := bleveInit("storage")
 	if err != nil {
 		panic(err)
 	}
 
+	// data 준비
 	data := Book{
 		Title:  "Lorem 크하하 Ipsum is simply dummy text of the printing and typesetting industry",
 		Author: "WhoHaHaHeeHee",
@@ -47,15 +49,16 @@ func main() {
 	index.Index("First", data)
 	index.Index("Second", data)
 
+	// 수정용 data 준비
 	dataMod := Book{
 		Title:  "Lorem 크하하 Ipsum is simply dummy text of the printing and typesetting industry BaBaBa",
-		Author: "WhoHa",
+		Author: "WhoHa 으읨믜하하하",
 	}
 
 	// 데이터 수정
 	index.Index("First", dataMod)
 
-	// 검색 - cRud
+	// 검색
 	// - 불완전한 단어는 검색되지 않으므로 정규표현식을 써야한다.
 	// - 글자수 제한: 영어 4, 한글 2
 
@@ -65,17 +68,20 @@ func main() {
 	que3 := bleve.NewRegexpQuery("(.*)하하(.*)")
 
 	// Author 검색
-	que4 := bleve.NewMatchQuery("WhoHa")
-	// que4 := bleve.NewRegexpQuery("(.*)하하(.*)") // 정규표현식 안 된다...
+	// que4 := bleve.NewMatchQuery("WhoHa")
+	// 정규표현식은 소문자만 된다고 한다. - https://github.com/blevesearch/bleve/issues/989#issuecomment-415011983
+	// que4 := bleve.NewRegexpQuery("(.*)hoha(.*)")
+	que4 := bleve.NewRegexpQuery("(.*)읨믜(.*)")
 	que4.SetField("Author")
 
-	// 개별 생성한 검색쿼리 합치기
+	// 개별 생성한 쿼리 합치기
 	que := bleve.NewConjunctionQuery()
 	que.AddQuery(que1)
 	que.AddQuery(que2)
 	que.AddQuery(que3)
 	que.AddQuery(que4)
 
+	// 검색 실행
 	search := bleve.NewSearchRequest(que)
 	searchResults, err := index.Search(search)
 	if err != nil {
