@@ -68,9 +68,9 @@ func main() {
 	que3 := bleve.NewRegexpQuery("(.*)하하(.*)")
 
 	// Author 검색
-	// que4 := bleve.NewMatchQuery("WhoHa")
 	// 정규표현식은 소문자만 된다고 한다. - https://github.com/blevesearch/bleve/issues/989#issuecomment-415011983
-	// que4 := bleve.NewRegexpQuery("(.*)hoha(.*)")
+	// que4 := bleve.NewMatchQuery("WhoHa")	// 이래 쓰면 안 된다.
+	// que4 := bleve.NewRegexpQuery("(.*)hoha(.*)")	// 이래 쓰면 잘 된다.
 	que4 := bleve.NewRegexpQuery("(.*)읨믜(.*)")
 	que4.SetField("Author")
 
