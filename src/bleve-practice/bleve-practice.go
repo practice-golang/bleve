@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/blevesearch/bleve"
@@ -14,6 +13,12 @@ type Book struct {
 	ID     int
 	Title  string
 	Author string
+}
+
+// Data : 블레비 검색 결과 데이터
+type Data struct {
+	ID     string                 `json:"id"`
+	Fields map[string]interface{} `json:"fields"`
 }
 
 func bleveInit(indexPath string) (bleve.Index, error) {
@@ -29,78 +34,15 @@ func bleveInit(indexPath string) (bleve.Index, error) {
 	return index, nil
 }
 
-func main() {
-	// DB 준비
-	index, err := bleveInit("storage")
-	if err != nil {
-		panic(err)
-	}
-
-	// data 준비
-	data := Book{
-		Title:  "Lorem 크하하 Ipsum is simply dummy text of the printing and typesetting industry",
-		Author: "WhoHaHaHeeHee",
-	}
-
-	// 데이터 추가
-	index.Index("First", data)
-	index.Index("Second", data)
-
-	// 수정용 data 준비
-	dataMod := Book{
-		Title:  "Lorem 크하하 Ipsum is simply dummy text of the printing and typesetting industry BaBaBa",
-		Author: "WhoHa 으읨믜하하하",
-	}
-
-	// 데이터 수정
-	index.Index("First", dataMod)
-
-	// 검색
-	// - 불완전한 단어는 검색되지 않으므로 정규표현식을 써야한다.
-	// - 글자수 제한: 영어 4, 한글 2
-
-	// Title, Author 전체 검색
-	que1 := bleve.NewMatchQuery("simply")
-	que2 := bleve.NewMatchQuery("text")
-	que3 := bleve.NewRegexpQuery("(.*)하하(.*)")
-
-	// Author 검색
-	// 정규표현식은 소문자만 된다고 한다. - https://github.com/blevesearch/bleve/issues/989#issuecomment-415011983
-	// que4 := bleve.NewMatchQuery("WhoHa")	// 이래 쓰면 안 된다.
-	// que4 := bleve.NewRegexpQuery("(.*)hoha(.*)")	// 이래 쓰면 잘 된다.
-	que4 := bleve.NewRegexpQuery("(.*)읨믜(.*)")
-	que4.SetField("Author")
-
-	// 개별 생성한 쿼리 합치기
-	que := bleve.NewConjunctionQuery()
-	que.AddQuery(que1)
-	que.AddQuery(que2)
-	que.AddQuery(que3)
-	que.AddQuery(que4)
-
-	// 검색 실행
-	search := bleve.NewSearchRequest(que)
-	searchResults, err := index.Search(search)
-	if err != nil {
-		panic(err)
-	}
-
-	// 이건 그냥 결과가 없을 때 표시
-	if searchResults.Total == 0 {
-		fmt.Println(searchResults)
-	}
-
-	// 결과 표시
+func getResult(searchResults *bleve.SearchResult, db bleve.Index) (result []Data) {
+	result = make([]Data, 0)
 	for _, hit := range searchResults.Hits {
-		doc, err := index.Document(hit.ID)
+		doc, err := db.Document(hit.ID)
 		if err != nil {
 			panic(err)
 		}
 
-		data := struct {
-			ID     string                 `json:"id"`
-			Fields map[string]interface{} `json:"fields"`
-		}{
+		data := Data{
 			ID:     hit.ID,
 			Fields: map[string]interface{}{},
 		}
@@ -141,6 +83,82 @@ func main() {
 		}
 
 		// fmt.Println(data)
-		fmt.Println(hit.ID, " : ", data.Fields["Title"], " / ", data.Fields["Author"], reflect.TypeOf(data.Fields["Author"]))
+		// fmt.Println(data.ID, " : ", data.Fields["Title"], " / ", data.Fields["Author"], reflect.TypeOf(data.Fields["Author"]))
+		result = append(result, data)
 	}
+	return
+}
+
+func main() {
+	// Index 준비
+	idx, err := bleveInit("storage")
+	if err != nil {
+		panic(err)
+	}
+
+	// data 준비
+	data := Book{
+		Title:  "Lorem 크하하 Ipsum is simply dummy text of the printing and typesetting industry",
+		Author: "WhoHaHaHeeHee",
+	}
+
+	// 데이터 추가 ~= Crud
+	idx.Index("First", data)
+	idx.Index("Second", data)
+
+	// 수정용 data 준비
+	dataMod := Book{
+		Title:  "Lorem 크하하 Ipsum is simply dummy text of the printing and typesetting industry BaBaBa",
+		Author: "WhoHa 으읨믜하하하",
+	}
+
+	// 데이터 수정 ~= crUd
+	idx.Index("First", dataMod)
+
+	// 검색
+	// - 불완전한 단어는 검색되지 않으므로 정규표현식을 써야한다.
+	// - 글자수 제한: 영어 4, 한글 2
+
+	// Title, Author 전체 검색
+	que1 := bleve.NewMatchQuery("simply")
+	que2 := bleve.NewMatchQuery("text")
+	que3 := bleve.NewRegexpQuery("(.*)하하(.*)")
+	// que3 := bleve.NewRegexpQuery("(.*)") // 모든 목록 요청
+
+	// Author 검색
+	// 정규표현식은 소문자만 된다고 한다. - https://github.com/blevesearch/bleve/issues/989#issuecomment-415011983
+	// que4 := bleve.NewMatchQuery("WhoHa")	// 이래 쓰면 안 된다.
+	que4 := bleve.NewRegexpQuery("(.*)hoha(.*)") // 이래 쓰면 잘 된다.
+	// que4 := bleve.NewRegexpQuery("(.*)읨믜(.*)")
+	que4.SetField("Author")
+
+	// 개별 생성한 쿼리 합치기
+	que := bleve.NewConjunctionQuery()
+	que.AddQuery(que1)
+	que.AddQuery(que2)
+	que.AddQuery(que3)
+	// que.AddQuery(que4)
+
+	// 검색 실행 ~= cRud
+	search := bleve.NewSearchRequest(que)
+	searchResults, err := idx.Search(search)
+	if err != nil {
+		panic(err)
+	}
+
+	// 이건 그냥 결과가 없을 때 표시
+	if searchResults.Total == 0 {
+		fmt.Println(searchResults)
+	}
+
+	// 결과 취득
+	results := getResult(searchResults, idx)
+
+	// 결과 표시
+	for _, r := range results {
+		fmt.Println(r.ID, r.Fields["Title"], " / ", r.Fields["Author"])
+	}
+
+	// 인덱스 삭제
+	idx.Delete("First")
 }
