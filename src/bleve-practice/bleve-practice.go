@@ -161,4 +161,20 @@ func main() {
 
 	// 인덱스 삭제
 	idx.Delete("First")
+
+	// 삭제 후 재검색 및 결과 표시
+	fmt.Println("----")
+	queAll := bleve.NewRegexpQuery("(.*)")
+	que = bleve.NewConjunctionQuery()
+	que.AddQuery(queAll)
+	search = bleve.NewSearchRequest(que)
+	searchResults, err = idx.Search(search)
+	if err != nil {
+		panic(err)
+	}
+	results = getResult(searchResults, idx)
+	for _, r := range results {
+		fmt.Println(r.ID, r.Fields["Title"], " / ", r.Fields["Author"])
+	}
+
 }
