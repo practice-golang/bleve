@@ -21,7 +21,8 @@ type Data struct {
 	Fields map[string]interface{} `json:"fields"`
 }
 
-func bleveInit(indexPath string) (bleve.Index, error) {
+// BleveInit : 초기화
+func BleveInit(indexPath string) (bleve.Index, error) {
 	index, err := bleve.Open(indexPath)
 	if err != nil {
 		mapping := bleve.NewIndexMapping()
@@ -34,7 +35,8 @@ func bleveInit(indexPath string) (bleve.Index, error) {
 	return index, nil
 }
 
-func getResult(searchResults *bleve.SearchResult, db bleve.Index) (result []Data) {
+// GetResult : 결과 취득
+func GetResult(searchResults *bleve.SearchResult, db bleve.Index) (result []Data) {
 	result = make([]Data, 0)
 	for _, hit := range searchResults.Hits {
 		doc, err := db.Document(hit.ID)
@@ -91,7 +93,7 @@ func getResult(searchResults *bleve.SearchResult, db bleve.Index) (result []Data
 
 func main() {
 	// Index 준비
-	idx, err := bleveInit("storage")
+	idx, err := BleveInit("storage")
 	if err != nil {
 		panic(err)
 	}
@@ -152,7 +154,7 @@ func main() {
 	}
 
 	// 결과 취득
-	results := getResult(searchResults, idx)
+	results := GetResult(searchResults, idx)
 
 	// 결과 표시
 	for _, r := range results {
@@ -172,7 +174,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	results = getResult(searchResults, idx)
+	results = GetResult(searchResults, idx)
 	for _, r := range results {
 		fmt.Println(r.ID, r.Fields["Title"], " / ", r.Fields["Author"])
 	}
