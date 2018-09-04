@@ -1,6 +1,8 @@
 .DS_Store
+.vscode
 pkg
 bin
+debug
 bleve-practice.exe
 storage
 vendor
